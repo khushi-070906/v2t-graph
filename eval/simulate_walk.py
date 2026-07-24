@@ -47,13 +47,30 @@ Two room modes:
     - adversarial_room: specifically constructed to separate distance-only
       ranking from heading-aware ranking — THIS is the meaningful ablation
       for the paper
+
+v2t_pruned scoring: this now calls the REAL graph_builder.py/pruning.py
+pipeline instead of reimplementing edge_weight() locally (an earlier
+version duplicated the formula here so this file could avoid a torch/PyG
+dependency, which meant the eval numbers cited in the paper weren't
+actually produced by the described method — see _priority_v2t below for
+the top-down-world -> camera-frame projection this requires).
 """
 
 from __future__ import annotations
 
 import math
+import os
 import random
+import sys
 from dataclasses import dataclass
+
+# eval/ is a subdirectory of the project root, where graph_builder.py,
+# pruning.py, and detect_depth.py actually live.
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+
+from detect_depth import Detection  # noqa: E402
+from graph_builder import build_graph  # noqa: E402
+from pruning import prune_graph, PruningConfig  # noqa: E402
 
 
 @dataclass
@@ -72,7 +89,6 @@ class SimResult:
     reached_goal: bool
 
 
-AFFORDANCE = {"door": 1.0, "obstacle": 0.9, "person": 0.8, "chair": 0.5, "table": 0.5, "plant": 0.2}
 CRITICAL_LABELS = {"door", "stairs", "obstacle"}  # matches pruning.py's forced-keep threshold (>=0.9)
 
 
@@ -153,27 +169,100 @@ def _priority_distance_only(obstacles: list[Obstacle], agent_pos: tuple[int, int
     return sorted(obstacles, key=lambda o: (o.x - ax) ** 2 + (o.y - ay) ** 2)
 
 
-def _priority_v2t(
-    obstacles: list[Obstacle], agent_pos: tuple[int, int], heading: tuple[float, float]
-) -> list[Obstacle]:
+def _bearing_and_distance(
+    agent_pos: tuple[int, int], heading: tuple[float, float], obj_pos: tuple[float, float]
+) -> tuple[float, float]:
     """
-    Mirrors pruning.py's edge_weight logic in 2D-grid form: distance decay *
-    heading alignment * affordance priority. Kept separate from the real
-    pruning.py so this simulation has no torch/PyG dependency, but the
-    formula must stay in sync with pruning.py if you change one.
+    (bearing_rad, distance) of obj_pos relative to agent_pos and heading.
+    bearing_rad is signed, 0 = straight ahead, +-pi = directly behind —
+    the same "angle relative to where the camera is pointed" convention
+    graph_builder._ego_edge_attr assumes when it derives angle from a
+    normalized frame x-position.
     """
     ax, ay = agent_pos
     hx, hy = heading
     hnorm = math.hypot(hx, hy) or 1.0
     hx, hy = hx / hnorm, hy / hnorm
 
-    def score(o: Obstacle) -> float:
-        dx, dy = o.x - ax, o.y - ay
-        dist = math.hypot(dx, dy) or 0.01
-        dir_align = max(0.0, (dx * hx + dy * hy) / dist)
-        return AFFORDANCE.get(o.label, 0.3) * math.exp(-dist / 5.0) * (dir_align ** 2)
+    dx, dy = obj_pos[0] - ax, obj_pos[1] - ay
+    dist = math.hypot(dx, dy)
+    if dist < 1e-9:
+        return 0.0, 0.0
 
-    return sorted(obstacles, key=score, reverse=True)
+    heading_angle = math.atan2(hy, hx)
+    obj_angle = math.atan2(dy, dx)
+    bearing = obj_angle - heading_angle
+    bearing = (bearing + math.pi) % (2 * math.pi) - math.pi  # wrap to [-pi, pi]
+    return bearing, dist
+
+
+def _priority_v2t(
+    obstacles: list[Obstacle],
+    agent_pos: tuple[int, int],
+    heading: tuple[float, float],
+    max_depth: float,
+) -> list[Obstacle]:
+    """
+    Ranks obstacles by calling the REAL graph_builder.build_graph() /
+    pruning.prune_graph() pipeline, instead of a local reimplementation
+    of edge_weight() (see this module's docstring for why that mattered).
+
+    Projection: the sim's top-down (agent, heading-vector, x/y obstacles)
+    world becomes the pipeline's forward-facing-camera model by treating
+    each obstacle's position relative to the agent as a (depth, bearing)
+    pair, as if a chest-mounted camera were pointed exactly along
+    `heading` — bearing 0 = straight ahead, matching graph_builder's
+    ego->object edge convention (see _ego_edge_attr). Obstacles outside
+    the camera's +-90 degree horizontal field of view get their bearing
+    CLAMPED to +-pi/2 rather than dropped from the detection list:
+    pruning.py's heading_alignment() already scores anything past +-90
+    degrees to exactly 0 (cos-based falloff, floored at 0 "behind the
+    user"), so clamping and excluding produce identical scores — clamping
+    is just simpler than filtering detections up front.
+
+    max_depth is passed straight through to build_graph()'s own
+    normalization (see graph_builder.py) — it should roughly match the
+    room's scale in the same units as agent/obstacle coordinates, the
+    same role it plays for real metric depth in meters.
+    """
+    detections: list[Detection] = []
+    labels: list[str] = []
+    for i, o in enumerate(obstacles):
+        bearing, dist = _bearing_and_distance(agent_pos, heading, (o.x, o.y))
+        clipped_bearing = max(-math.pi / 2, min(math.pi / 2, bearing))
+        # Inverse of graph_builder._ego_edge_attr's `angle = (nx - 0.5) * pi`.
+        nx = 0.5 + clipped_bearing / math.pi
+        detections.append(
+            Detection(
+                obj_id=i,
+                label=o.label,
+                confidence=1.0,
+                bbox_xyxy=(0.0, 0.0, 0.0, 0.0),  # unused by build_graph/prune_graph
+                centroid_px=(nx, 0.5),  # frame_size=(1,1) below, so this IS the normalized position; ny is unused for ego-edge scoring
+                depth_m=max(dist, 1e-3),
+            )
+        )
+        labels.append(o.label)
+
+    graph = build_graph(detections, frame_size=(1.0, 1.0), max_depth=max_depth)
+
+    # prune_threshold=-1 and max_nodes=None: nothing should be dropped
+    # here — every obstacle needs a score so the sim can pick its own
+    # top-K via attention_slots. Pruning to a fixed node budget is a
+    # separate concern (compression_ratio.py), not this ranking.
+    pruned = prune_graph(
+        graph,
+        detections_labels=labels,
+        heading_rad=0.0,  # bearings above are already heading-relative
+        config=PruningConfig(prune_threshold=-1.0, max_nodes=None),
+    )
+
+    # Nothing was dropped above, so kept_node_indices == range(n) and
+    # kept_importance is aligned row-for-row with it (see pruning.py's
+    # _subgraph) — i.e. importance[k] is obstacles[k]'s real score.
+    importance = pruned.kept_importance.tolist()
+    ranked_idx = sorted(range(len(obstacles)), key=lambda i: importance[i], reverse=True)
+    return [obstacles[i] for i in ranked_idx]
 
 
 def simulate(
@@ -212,7 +301,7 @@ def simulate(
         elif strategy == "distance_only":
             ranked = _priority_distance_only(obstacles, tuple(pos))
         elif strategy == "v2t_pruned":
-            ranked = _priority_v2t(obstacles, tuple(pos), heading)
+            ranked = _priority_v2t(obstacles, tuple(pos), heading, max_depth=float(max(width, height)))
         else:
             raise ValueError(strategy)
 

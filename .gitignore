@@ -1,6 +1,84 @@
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+
+# Virtual Environment
 .venv/
 venv/
-__pycache__/
-*.pyc
+env/
+
+# =========================
+# VS Code
+# =========================
 .vscode/
 .idea/
+
+# =========================
+# Model Weights
+# =========================
+*.pt
+*.pth
+*.onnx
+*.engine
+*.tflite
+*.ckpt
+
+# If you want to keep weights folder but not the files
+weights/
+!weights/.gitkeep
+
+# =========================
+# Datasets
+# =========================
+frames/
+stairs_obstacle_test/
+dataset/
+datasets/
+data/
+
+# =========================
+# Evaluation Outputs
+# =========================
+eval/results/
+eval/output/
+*.csv
+*.log
+
+# =========================
+# Images & Videos (Generated)
+# =========================
+*.mp4
+*.avi
+*.mov
+*.gif
+
+# Ignore test/generated images
+photo.jpeg
+
+# =========================
+# Cache
+# =========================
+.cache/
+.pytest_cache/
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Environment Variables
+# =========================
+.env
+
+# =========================
+# Misc
+# =========================
+*.tmp
+*.bak

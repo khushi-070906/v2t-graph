@@ -1,0 +1,1176 @@
+{
+  "frames_attempted": 51,
+  "frames_succeeded": 51,
+  "frames_failed": 0,
+  "failures": [],
+  "per_frame": [
+    {
+      "filename": "nyu_0000.jpg",
+      "raw_nodes": 6,
+      "raw_edges": 36,
+      "pruned_nodes": 2,
+      "pruned_edges": 0,
+      "node_compression": 0.6666666666666667,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "chair",
+        "cabinet",
+        "cabinet",
+        "wall",
+        "cabinet",
+        "cabinet"
+      ],
+      "pruned_labels": [
+        "chair",
+        "cabinet"
+      ]
+    },
+    {
+      "filename": "nyu_0001.jpg",
+      "raw_nodes": 3,
+      "raw_edges": 9,
+      "pruned_nodes": 1,
+      "pruned_edges": 0,
+      "node_compression": 0.6666666666666667,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet",
+        "cabinet",
+        "wall"
+      ],
+      "pruned_labels": [
+        "wall"
+      ]
+    },
+    {
+      "filename": "nyu_0002.jpg",
+      "raw_nodes": 2,
+      "raw_edges": 4,
+      "pruned_nodes": 1,
+      "pruned_edges": 0,
+      "node_compression": 0.5,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 1,
+      "critical_nodes_retained": 1,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "chair",
+        "door"
+      ],
+      "pruned_labels": [
+        "door"
+      ]
+    },
+    {
+      "filename": "nyu_0003.jpg",
+      "raw_nodes": 5,
+      "raw_edges": 25,
+      "pruned_nodes": 2,
+      "pruned_edges": 0,
+      "node_compression": 0.6,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "chair",
+        "tv",
+        "chair",
+        "cabinet",
+        "cabinet"
+      ],
+      "pruned_labels": [
+        "chair",
+        "chair"
+      ]
+    },
+    {
+      "filename": "nyu_0004.jpg",
+      "raw_nodes": 7,
+      "raw_edges": 49,
+      "pruned_nodes": 6,
+      "pruned_edges": 0,
+      "node_compression": 0.1428571428571429,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 1,
+      "critical_nodes_retained": 1,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "chair",
+        "chair",
+        "chair",
+        "door",
+        "table",
+        "chair",
+        "cabinet"
+      ],
+      "pruned_labels": [
+        "chair",
+        "chair",
+        "chair",
+        "door",
+        "table",
+        "chair"
+      ]
+    },
+    {
+      "filename": "nyu_0005.jpg",
+      "raw_nodes": 12,
+      "raw_edges": 144,
+      "pruned_nodes": 7,
+      "pruned_edges": 0,
+      "node_compression": 0.41666666666666663,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet",
+        "chair",
+        "tv",
+        "chair",
+        "chair",
+        "chair",
+        "table",
+        "chair",
+        "table",
+        "chair",
+        "chair",
+        "chair"
+      ],
+      "pruned_labels": [
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "chair"
+      ]
+    },
+    {
+      "filename": "nyu_0006.jpg",
+      "raw_nodes": 15,
+      "raw_edges": 225,
+      "pruned_nodes": 5,
+      "pruned_edges": 0,
+      "node_compression": 0.6666666666666667,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet",
+        "tv",
+        "tv",
+        "cabinet",
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "cabinet",
+        "chair",
+        "wall",
+        "tv",
+        "chair",
+        "chair",
+        "cabinet"
+      ],
+      "pruned_labels": [
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "chair"
+      ]
+    },
+    {
+      "filename": "nyu_0007.jpg",
+      "raw_nodes": 2,
+      "raw_edges": 4,
+      "pruned_nodes": 2,
+      "pruned_edges": 0,
+      "node_compression": 0.0,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 1,
+      "critical_nodes_retained": 1,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "chair",
+        "door"
+      ],
+      "pruned_labels": [
+        "chair",
+        "door"
+      ]
+    },
+    {
+      "filename": "nyu_0008.jpg",
+      "raw_nodes": 5,
+      "raw_edges": 25,
+      "pruned_nodes": 1,
+      "pruned_edges": 0,
+      "node_compression": 0.8,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "chair",
+        "cabinet",
+        "cabinet",
+        "wall",
+        "wall"
+      ],
+      "pruned_labels": [
+        "wall"
+      ]
+    },
+    {
+      "filename": "nyu_0009.jpg",
+      "raw_nodes": 3,
+      "raw_edges": 9,
+      "pruned_nodes": 2,
+      "pruned_edges": 0,
+      "node_compression": 0.33333333333333337,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet",
+        "cabinet",
+        "cabinet"
+      ],
+      "pruned_labels": [
+        "cabinet",
+        "cabinet"
+      ]
+    },
+    {
+      "filename": "nyu_0010.jpg",
+      "raw_nodes": 1,
+      "raw_edges": 1,
+      "pruned_nodes": 0,
+      "pruned_edges": 0,
+      "node_compression": 1.0,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet"
+      ],
+      "pruned_labels": []
+    },
+    {
+      "filename": "nyu_0011.jpg",
+      "raw_nodes": 2,
+      "raw_edges": 4,
+      "pruned_nodes": 1,
+      "pruned_edges": 0,
+      "node_compression": 0.5,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet",
+        "cabinet"
+      ],
+      "pruned_labels": [
+        "cabinet"
+      ]
+    },
+    {
+      "filename": "nyu_0012.jpg",
+      "raw_nodes": 4,
+      "raw_edges": 16,
+      "pruned_nodes": 2,
+      "pruned_edges": 0,
+      "node_compression": 0.5,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "sofa",
+        "sofa",
+        "sofa",
+        "chair"
+      ],
+      "pruned_labels": [
+        "sofa",
+        "chair"
+      ]
+    },
+    {
+      "filename": "nyu_0013.jpg",
+      "raw_nodes": 2,
+      "raw_edges": 4,
+      "pruned_nodes": 0,
+      "pruned_edges": 0,
+      "node_compression": 1.0,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet",
+        "wall"
+      ],
+      "pruned_labels": []
+    },
+    {
+      "filename": "nyu_0014.jpg",
+      "raw_nodes": 5,
+      "raw_edges": 25,
+      "pruned_nodes": 0,
+      "pruned_edges": 0,
+      "node_compression": 1.0,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet",
+        "cabinet",
+        "table",
+        "cabinet",
+        "cabinet"
+      ],
+      "pruned_labels": []
+    },
+    {
+      "filename": "nyu_0015.jpg",
+      "raw_nodes": 2,
+      "raw_edges": 4,
+      "pruned_nodes": 0,
+      "pruned_edges": 0,
+      "node_compression": 1.0,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet",
+        "cabinet"
+      ],
+      "pruned_labels": []
+    },
+    {
+      "filename": "nyu_0016.jpg",
+      "raw_nodes": 10,
+      "raw_edges": 100,
+      "pruned_nodes": 5,
+      "pruned_edges": 0,
+      "node_compression": 0.5,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "chair",
+        "table",
+        "chair",
+        "chair",
+        "chair",
+        "wall",
+        "chair",
+        "chair",
+        "chair",
+        "chair"
+      ],
+      "pruned_labels": [
+        "chair",
+        "table",
+        "chair",
+        "chair",
+        "chair"
+      ]
+    },
+    {
+      "filename": "nyu_0017.jpg",
+      "raw_nodes": 9,
+      "raw_edges": 81,
+      "pruned_nodes": 3,
+      "pruned_edges": 0,
+      "node_compression": 0.6666666666666667,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet",
+        "chair",
+        "chair",
+        "chair",
+        "table",
+        "tv",
+        "chair",
+        "chair",
+        "wall"
+      ],
+      "pruned_labels": [
+        "chair",
+        "chair",
+        "table"
+      ]
+    },
+    {
+      "filename": "nyu_0018.jpg",
+      "raw_nodes": 5,
+      "raw_edges": 25,
+      "pruned_nodes": 4,
+      "pruned_edges": 0,
+      "node_compression": 0.19999999999999996,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 1,
+      "critical_nodes_retained": 1,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "chair",
+        "table",
+        "chair",
+        "door",
+        "wall"
+      ],
+      "pruned_labels": [
+        "chair",
+        "chair",
+        "door",
+        "wall"
+      ]
+    },
+    {
+      "filename": "nyu_0019.jpg",
+      "raw_nodes": 1,
+      "raw_edges": 1,
+      "pruned_nodes": 1,
+      "pruned_edges": 0,
+      "node_compression": 0.0,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "table"
+      ],
+      "pruned_labels": [
+        "table"
+      ]
+    },
+    {
+      "filename": "nyu_0020.jpg",
+      "raw_nodes": 3,
+      "raw_edges": 9,
+      "pruned_nodes": 1,
+      "pruned_edges": 0,
+      "node_compression": 0.6666666666666667,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "chair",
+        "wall",
+        "cabinet"
+      ],
+      "pruned_labels": [
+        "chair"
+      ]
+    },
+    {
+      "filename": "nyu_0021.jpg",
+      "raw_nodes": 4,
+      "raw_edges": 16,
+      "pruned_nodes": 3,
+      "pruned_edges": 0,
+      "node_compression": 0.25,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet",
+        "cabinet",
+        "cabinet",
+        "cabinet"
+      ],
+      "pruned_labels": [
+        "cabinet",
+        "cabinet",
+        "cabinet"
+      ]
+    },
+    {
+      "filename": "nyu_0022.jpg",
+      "raw_nodes": 9,
+      "raw_edges": 81,
+      "pruned_nodes": 5,
+      "pruned_edges": 0,
+      "node_compression": 0.4444444444444444,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "tv",
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "wall",
+        "chair",
+        "chair"
+      ],
+      "pruned_labels": [
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "chair"
+      ]
+    },
+    {
+      "filename": "nyu_0023.jpg",
+      "raw_nodes": 7,
+      "raw_edges": 49,
+      "pruned_nodes": 3,
+      "pruned_edges": 0,
+      "node_compression": 0.5714285714285714,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "tv",
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "chair"
+      ],
+      "pruned_labels": [
+        "chair",
+        "chair",
+        "chair"
+      ]
+    },
+    {
+      "filename": "nyu_0024.jpg",
+      "raw_nodes": 6,
+      "raw_edges": 36,
+      "pruned_nodes": 3,
+      "pruned_edges": 0,
+      "node_compression": 0.5,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet",
+        "chair",
+        "cabinet",
+        "wall",
+        "cabinet",
+        "wall"
+      ],
+      "pruned_labels": [
+        "cabinet",
+        "wall",
+        "cabinet"
+      ]
+    },
+    {
+      "filename": "nyu_0025.jpg",
+      "raw_nodes": 1,
+      "raw_edges": 1,
+      "pruned_nodes": 0,
+      "pruned_edges": 0,
+      "node_compression": 1.0,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "tv"
+      ],
+      "pruned_labels": []
+    },
+    {
+      "filename": "nyu_0026.jpg",
+      "raw_nodes": 4,
+      "raw_edges": 16,
+      "pruned_nodes": 1,
+      "pruned_edges": 0,
+      "node_compression": 0.75,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "chair",
+        "cabinet",
+        "tv",
+        "cabinet"
+      ],
+      "pruned_labels": [
+        "cabinet"
+      ]
+    },
+    {
+      "filename": "nyu_0027.jpg",
+      "raw_nodes": 7,
+      "raw_edges": 49,
+      "pruned_nodes": 2,
+      "pruned_edges": 0,
+      "node_compression": 0.7142857142857143,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "sofa",
+        "chair",
+        "chair",
+        "table",
+        "cabinet",
+        "cabinet",
+        "cabinet"
+      ],
+      "pruned_labels": [
+        "sofa",
+        "table"
+      ]
+    },
+    {
+      "filename": "nyu_0028.jpg",
+      "raw_nodes": 4,
+      "raw_edges": 16,
+      "pruned_nodes": 1,
+      "pruned_edges": 0,
+      "node_compression": 0.75,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "sofa",
+        "cabinet",
+        "chair",
+        "chair"
+      ],
+      "pruned_labels": [
+        "sofa"
+      ]
+    },
+    {
+      "filename": "nyu_0029.jpg",
+      "raw_nodes": 3,
+      "raw_edges": 9,
+      "pruned_nodes": 2,
+      "pruned_edges": 0,
+      "node_compression": 0.33333333333333337,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet",
+        "cabinet",
+        "cabinet"
+      ],
+      "pruned_labels": [
+        "cabinet",
+        "cabinet"
+      ]
+    },
+    {
+      "filename": "nyu_0030.jpg",
+      "raw_nodes": 1,
+      "raw_edges": 1,
+      "pruned_nodes": 1,
+      "pruned_edges": 0,
+      "node_compression": 0.0,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "table"
+      ],
+      "pruned_labels": [
+        "table"
+      ]
+    },
+    {
+      "filename": "nyu_0031.jpg",
+      "raw_nodes": 8,
+      "raw_edges": 64,
+      "pruned_nodes": 5,
+      "pruned_edges": 0,
+      "node_compression": 0.375,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "table"
+      ],
+      "pruned_labels": [
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "table"
+      ]
+    },
+    {
+      "filename": "nyu_0032.jpg",
+      "raw_nodes": 5,
+      "raw_edges": 25,
+      "pruned_nodes": 2,
+      "pruned_edges": 0,
+      "node_compression": 0.6,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "chair",
+        "chair",
+        "chair",
+        "chair",
+        "table"
+      ],
+      "pruned_labels": [
+        "chair",
+        "chair"
+      ]
+    },
+    {
+      "filename": "nyu_0033.jpg",
+      "raw_nodes": 6,
+      "raw_edges": 36,
+      "pruned_nodes": 3,
+      "pruned_edges": 0,
+      "node_compression": 0.5,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "chair",
+        "chair",
+        "table",
+        "chair",
+        "cabinet",
+        "wall"
+      ],
+      "pruned_labels": [
+        "chair",
+        "chair",
+        "cabinet"
+      ]
+    },
+    {
+      "filename": "nyu_0034.jpg",
+      "raw_nodes": 1,
+      "raw_edges": 1,
+      "pruned_nodes": 1,
+      "pruned_edges": 0,
+      "node_compression": 0.0,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "wall"
+      ],
+      "pruned_labels": [
+        "wall"
+      ]
+    },
+    {
+      "filename": "nyu_0035.jpg",
+      "raw_nodes": 6,
+      "raw_edges": 36,
+      "pruned_nodes": 3,
+      "pruned_edges": 0,
+      "node_compression": 0.5,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 1,
+      "critical_nodes_retained": 1,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "sofa",
+        "cabinet",
+        "table",
+        "wall",
+        "wall",
+        "door"
+      ],
+      "pruned_labels": [
+        "sofa",
+        "wall",
+        "door"
+      ]
+    },
+    {
+      "filename": "nyu_0036.jpg",
+      "raw_nodes": 2,
+      "raw_edges": 4,
+      "pruned_nodes": 2,
+      "pruned_edges": 0,
+      "node_compression": 0.0,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "wall",
+        "cabinet"
+      ],
+      "pruned_labels": [
+        "wall",
+        "cabinet"
+      ]
+    },
+    {
+      "filename": "nyu_0037.jpg",
+      "raw_nodes": 2,
+      "raw_edges": 4,
+      "pruned_nodes": 0,
+      "pruned_edges": 0,
+      "node_compression": 1.0,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "person",
+        "cabinet"
+      ],
+      "pruned_labels": []
+    },
+    {
+      "filename": "nyu_0038.jpg",
+      "raw_nodes": 3,
+      "raw_edges": 9,
+      "pruned_nodes": 1,
+      "pruned_edges": 0,
+      "node_compression": 0.6666666666666667,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet",
+        "wall",
+        "wall"
+      ],
+      "pruned_labels": [
+        "wall"
+      ]
+    },
+    {
+      "filename": "nyu_0039.jpg",
+      "raw_nodes": 4,
+      "raw_edges": 16,
+      "pruned_nodes": 2,
+      "pruned_edges": 0,
+      "node_compression": 0.5,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet",
+        "bed",
+        "sofa",
+        "chair"
+      ],
+      "pruned_labels": [
+        "cabinet",
+        "bed"
+      ]
+    },
+    {
+      "filename": "nyu_0040.jpg",
+      "raw_nodes": 5,
+      "raw_edges": 25,
+      "pruned_nodes": 1,
+      "pruned_edges": 0,
+      "node_compression": 0.8,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet",
+        "chair",
+        "cabinet",
+        "cabinet",
+        "wall"
+      ],
+      "pruned_labels": [
+        "chair"
+      ]
+    },
+    {
+      "filename": "nyu_0041.jpg",
+      "raw_nodes": 5,
+      "raw_edges": 25,
+      "pruned_nodes": 3,
+      "pruned_edges": 0,
+      "node_compression": 0.4,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "chair",
+        "chair",
+        "chair",
+        "table",
+        "chair"
+      ],
+      "pruned_labels": [
+        "chair",
+        "table",
+        "chair"
+      ]
+    },
+    {
+      "filename": "nyu_0042.jpg",
+      "raw_nodes": 2,
+      "raw_edges": 4,
+      "pruned_nodes": 1,
+      "pruned_edges": 0,
+      "node_compression": 0.5,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "bed",
+        "cabinet"
+      ],
+      "pruned_labels": [
+        "bed"
+      ]
+    },
+    {
+      "filename": "nyu_0043.jpg",
+      "raw_nodes": 4,
+      "raw_edges": 16,
+      "pruned_nodes": 3,
+      "pruned_edges": 0,
+      "node_compression": 0.25,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "bed",
+        "wall",
+        "sofa",
+        "table"
+      ],
+      "pruned_labels": [
+        "bed",
+        "wall",
+        "sofa"
+      ]
+    },
+    {
+      "filename": "nyu_0044.jpg",
+      "raw_nodes": 1,
+      "raw_edges": 1,
+      "pruned_nodes": 0,
+      "pruned_edges": 0,
+      "node_compression": 1.0,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "bed"
+      ],
+      "pruned_labels": []
+    },
+    {
+      "filename": "nyu_0045.jpg",
+      "raw_nodes": 4,
+      "raw_edges": 16,
+      "pruned_nodes": 3,
+      "pruned_edges": 0,
+      "node_compression": 0.25,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 1,
+      "critical_nodes_retained": 1,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "tv",
+        "cabinet",
+        "door",
+        "wall"
+      ],
+      "pruned_labels": [
+        "cabinet",
+        "door",
+        "wall"
+      ]
+    },
+    {
+      "filename": "nyu_0046.jpg",
+      "raw_nodes": 8,
+      "raw_edges": 64,
+      "pruned_nodes": 1,
+      "pruned_edges": 0,
+      "node_compression": 0.875,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "tv",
+        "cabinet",
+        "tv",
+        "chair",
+        "wall",
+        "cabinet",
+        "cabinet",
+        "cabinet"
+      ],
+      "pruned_labels": [
+        "wall"
+      ]
+    },
+    {
+      "filename": "nyu_0047.jpg",
+      "raw_nodes": 2,
+      "raw_edges": 4,
+      "pruned_nodes": 2,
+      "pruned_edges": 0,
+      "node_compression": 0.0,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "person",
+        "wall"
+      ],
+      "pruned_labels": [
+        "person",
+        "wall"
+      ]
+    },
+    {
+      "filename": "nyu_0048.jpg",
+      "raw_nodes": 3,
+      "raw_edges": 9,
+      "pruned_nodes": 2,
+      "pruned_edges": 0,
+      "node_compression": 0.33333333333333337,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet",
+        "wall",
+        "cabinet"
+      ],
+      "pruned_labels": [
+        "cabinet",
+        "wall"
+      ]
+    },
+    {
+      "filename": "nyu_0049.jpg",
+      "raw_nodes": 2,
+      "raw_edges": 4,
+      "pruned_nodes": 1,
+      "pruned_edges": 0,
+      "node_compression": 0.5,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 0,
+      "critical_nodes_retained": 0,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "cabinet",
+        "cabinet"
+      ],
+      "pruned_labels": [
+        "cabinet"
+      ]
+    },
+    {
+      "filename": "photo.jpeg",
+      "raw_nodes": 11,
+      "raw_edges": 121,
+      "pruned_nodes": 4,
+      "pruned_edges": 0,
+      "node_compression": 0.6363636363636364,
+      "edge_compression": 1.0,
+      "critical_nodes_total": 1,
+      "critical_nodes_retained": 1,
+      "critical_retention": 1.0,
+      "raw_labels": [
+        "sofa",
+        "bed",
+        "chair",
+        "wall",
+        "cabinet",
+        "chair",
+        "tv",
+        "table",
+        "sofa",
+        "cabinet",
+        "door"
+      ],
+      "pruned_labels": [
+        "chair",
+        "cabinet",
+        "chair",
+        "door"
+      ]
+    }
+  ],
+  "aggregate": {
+    "n_frames": 51,
+    "node_compression": {
+      "mean": 0.526,
+      "std": 0.298
+    },
+    "edge_compression": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "critical_retention": {
+      "mean": 1.0,
+      "std": 0.0
+    },
+    "n_frames_with_critical_objects": 7,
+    "mean_raw_nodes": 4.59,
+    "mean_pruned_nodes": 2.1
+  }
+}

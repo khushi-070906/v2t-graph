@@ -6,12 +6,16 @@ what makes the "hardware-agnostic" claim real: swap the encoder, not
 the pipeline. If these two encoders ever need different upstream data,
 the hardware-agnostic claim breaks — keep them both strictly downstream
 of the pruned Data object and nothing else.
+
+Both encoders read per-node importance from `pruned_graph.kept_importance`
+(set by pruning.py's _subgraph), not from edge weights — the pruned graph
+carries no edges, since pruning.py's scoring happens via the ego node's
+outgoing edges before nodes are ever subgraphed out.
 """
 
 from __future__ import annotations
 
 import json
-import math
 import numpy as np
 from torch_geometric.data import Data
 
@@ -31,12 +35,9 @@ def encode_haptic_matrix(pruned_graph: Data, grid_size: int = 64) -> np.ndarray:
     xs = pruned_graph.x[:, -2].numpy()
     ys = pruned_graph.x[:, -1].numpy()
 
-    # node_importance derived from incoming edge weights, if present
-    if hasattr(pruned_graph, "edge_weight") and pruned_graph.edge_weight.numel() > 0:
-        importance = np.zeros(pruned_graph.x.shape[0])
-        dst = pruned_graph.edge_index[1].numpy()
-        for d, w in zip(dst, pruned_graph.edge_weight.numpy()):
-            importance[d] += w
+    kept_importance = getattr(pruned_graph, "kept_importance", None)
+    if kept_importance is not None and kept_importance.numel() > 0:
+        importance = kept_importance.numpy().copy()
         if importance.max() > 0:
             importance = importance / importance.max()
     else:
@@ -79,6 +80,8 @@ def encode_spatial_audio(
         # pre-pruning.
         kept_indices = list(range(n))
 
+    kept_importance = getattr(pruned_graph, "kept_importance", None)
+
     for i in range(n):
         nx_ = pruned_graph.x[i, -2].item()
         ny_ = pruned_graph.x[i, -1].item()
@@ -87,17 +90,15 @@ def encode_spatial_audio(
         # azimuth: map normalized x in [0,1] to [-90, 90] degrees (left..right)
         azimuth_deg = (nx_ - 0.5) * 180.0
 
-        priority = 0.0
-        if hasattr(pruned_graph, "edge_weight") and pruned_graph.edge_weight.numel() > 0:
-            dst = pruned_graph.edge_index[1]
-            mask = dst == i
-            if mask.any():
-                priority = pruned_graph.edge_weight[mask].max().item()
+        if kept_importance is not None and kept_importance.numel() > i:
+            priority = float(kept_importance[i].item())
+        else:
+            priority = 0.0
 
         orig_idx = kept_indices[i]
         label = (
             detections_labels[orig_idx]
-            if orig_idx < len(detections_labels)
+            if 0 <= orig_idx < len(detections_labels)
             else "unknown"
         )
 

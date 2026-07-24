@@ -16,6 +16,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import numpy as np
 import cv2
+from PIL import Image
 
 
 @dataclass
@@ -36,14 +37,32 @@ class DetectorDepthEstimator:
     Swap `detector_weights` / `depth_model_name` for whatever checkpoints
     you have locally — the rest of the pipeline only depends on the
     Detection dataclass shape, not on these specific models.
+
+    detector_weights: pass an open-vocabulary checkpoint (e.g.
+        "yolov8s-worldv2.pt") to detect classes a stock COCO-trained YOLO
+        never can — COCO has no "door", "stairs", "wall", "cabinet", or
+        "obstacle" class, which are exactly the highest-priority classes
+        in pruning.py's AFFORDANCE_PRIORITY (door/stairs are force-kept
+        by pruning.py regardless of score, but a COCO detector can never
+        emit those labels for that force-keep to act on in the first
+        place). A "-world" checkpoint name triggers open_vocab_classes
+        below via YOLO.set_classes(); a standard checkpoint ignores it.
+
+    open_vocab_classes: text prompts for a "-world" checkpoint. Defaults
+        to graph_builder.DEFAULT_CLASS_VOCAB (minus "unknown", which is
+        pruning.py's fallback label, not a real detectable class) so the
+        detector's vocabulary and the rest of the pipeline's vocabulary
+        can't silently drift apart the way "sofa" (this project's vocab)
+        vs. "couch" (stock COCO's actual label) did.
     """
 
     def __init__(
         self,
         detector_weights: str = "yolov10n.pt",
-        depth_model_name: str = "depth-anything/Depth-Anything-V2-Small-hf",
+        depth_model_name: str = "depth-anything/Depth-Anything-V2-Metric-Indoor-Small-hf",
         device: str = "cuda",
         conf_threshold: float = 0.35,
+        open_vocab_classes: list[str] | None = None,
     ):
         self.conf_threshold = conf_threshold
         self.device = device
@@ -54,6 +73,13 @@ class DetectorDepthEstimator:
         from transformers import pipeline as hf_pipeline
 
         self.detector = YOLO(detector_weights)
+
+        if "-world" in detector_weights:
+            from graph_builder import DEFAULT_CLASS_VOCAB
+
+            classes = open_vocab_classes or [c for c in DEFAULT_CLASS_VOCAB if c != "unknown"]
+            self.detector.set_classes(classes)
+
         self.depth_estimator = hf_pipeline(
             task="depth-estimation", model=depth_model_name, device=device
         )
@@ -66,8 +92,12 @@ class DetectorDepthEstimator:
         results = self.detector.predict(frame_rgb, conf=self.conf_threshold, verbose=False)[0]
 
         # --- monocular depth map for the whole frame ---
-        depth_out = self.depth_estimator(frame_rgb)  # HF pipeline accepts PIL/np/array-like
-        depth_map = np.array(depth_out["depth"])  # HxW, relative depth units
+        depth_out = self.depth_estimator(Image.fromarray(frame_rgb))
+        # NOTE: depth_out["depth"] is a PIL Image rescaled to 0-255 for
+        # DISPLAY only — it is not real depth. The actual per-pixel depth
+        # values (meters, for a metric checkpoint) are in
+        # depth_out["predicted_depth"], a torch tensor shaped [1, H', W'].
+        depth_map = depth_out["predicted_depth"].squeeze().cpu().numpy()  # H'xW', meters
         depth_map = cv2.resize(depth_map, (w, h))
 
         detections: list[Detection] = []
@@ -111,13 +141,21 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run detection + depth on a single image.")
     parser.add_argument("image_path", type=str)
     parser.add_argument("--device", default="cuda")
+    parser.add_argument(
+        "--detector-weights",
+        default="yolov10n.pt",
+        help='e.g. "yolov8s-worldv2.pt" for open-vocabulary detection (see DetectorDepthEstimator docstring)',
+    )
+    parser.add_argument("--conf", type=float, default=0.35)
     args = parser.parse_args()
 
     frame = cv2.imread(args.image_path)
     if frame is None:
         raise FileNotFoundError(args.image_path)
 
-    pipeline = DetectorDepthEstimator(device=args.device)
+    pipeline = DetectorDepthEstimator(
+        device=args.device, detector_weights=args.detector_weights, conf_threshold=args.conf
+    )
     dets = pipeline.run(frame)
     for d in dets:
         print(f"{d.label:15s} conf={d.confidence:.2f} depth={d.depth_m:.2f} centroid={d.centroid_px}")

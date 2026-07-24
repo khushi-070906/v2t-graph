@@ -67,20 +67,53 @@ python src/eval/compression_ratio.py
    to map labels correctly. Verified with a forced `max_nodes=2` test: with
    5 detections pruned down to 2, the surviving nodes were correctly
    labeled `door` and `person` (not mislabeled by position).
-4. `detect_depth.py` and `pipeline.py` are untested against real model
-   weights in this environment (no network access to download YOLOv10 /
-   Depth-Anything checkpoints here) — logic follows the `ultralytics` and
-   `transformers` APIs but run it locally to confirm before relying on it.
-   Still open.
+4. ~~`detect_depth.py` and `pipeline.py` are untested against real model
+   weights~~ — **FIXED / VERIFIED.** Ran end-to-end on a real photo with
+   real `yolov8s-worldv2.pt` + Depth-Anything-V2 weights: 11 raw detections
+   (`sofa, bed, chair, wall, cabinet, chair, tv, table, sofa, cabinet,
+   door`) correctly pruned to 4 (`chair, cabinet, chair, door`), 63.6% node
+   compression, `door` correctly force-kept as the one critical-affordance
+   node. Confirms the `ultralytics`/`transformers` API usage in
+   `detect_depth.py` is correct against real weights, not just plausible.
+5. **Silent pruning regression from a stale/shadowed `pruning.py`** —
+   **FIXED.** A run against the real photo in issue 4 above initially
+   produced `node compression: 0.0%` — all 11 objects survived pruning,
+   including 7 nodes with `priority: 0.0` exactly, which should be
+   impossible: `_select_top_nodes`'s `if importance[i] < prune_threshold:
+   continue` check (added for the exact same class of bug — see the old
+   issue-4-era history in this section) should have dropped every one of
+   them. Root cause: the environment was executing a stale/shadowed copy
+   of `pruning.py` predating that fix, not the file actually being edited.
+   Re-running with the correct file in place fixed it — same real depth
+   values (`door` at 7.28m, `chair` at 5.42m, unchanged), correctly pruned
+   to 4/11 nodes. `pruning.py` now also carries a loud
+   `_assert_pruning_invariant` check (raises `AssertionError` naming the
+   offending node) so this class of regression fails immediately instead
+   of silently shipping a broken graph. Verified the assertion is silent
+   on the correct code path and fires correctly when the old buggy
+   `_select_top_nodes` is reintroduced.
+   **Takeaway:** if a "fixed" pruning/scoring bug appears to resurface,
+   check `python3 -c "import pruning; print(pruning.__file__)"` and for
+   stale `__pycache__`/shadowing copies before assuming the fix regressed.
 
 ## Next implementation steps
 
-- Swap in real YOLOv10 + Depth Anything V2 weights, run `pipeline.py` on a
-  few NYU Depth V2 frames, sanity-check detections visually (issue 4 —
-  still open)
-- Only after that: run `eval/compression_ratio.py` over the full dataset
-  for the actual paper numbers
+- Real YOLOv8-World + Depth Anything V2 weights are now confirmed working
+  end-to-end on a real photo, with correct pruning (issues 4 and 5 —
+  closed). Next: scale from single-photo spot checks to a real batch —
+  run `pipeline.py` over a folder of NYU Depth V2 / SUN RGB-D frames and
+  aggregate `compute_compression` output into the actual results-table
+  numbers, rather than one photo at a time.
+- Run `eval/simulate_walk.py` for the `attention_precision@K` comparison
+  number now that pruning correctness is verified on real weights, not
+  just synthetic detections.
 - Consider extending `simulate_walk.py`'s adversarial scenario to multiple
   blockers / more clutter to get a distribution of attention_precision
   values rather than one fixed scene per seed, if you want error bars for
   the paper's results table
+
+
+
+python pipeline.py photo.jpeg --detector-weights yolov8s-worldv2.pt --conf 0.15 --device cpu
+
+python eval\batch_eval.py frames --detector-weights yolov8s-worldv2.pt --conf 0.15 --device cpu --output-json results.json
