@@ -117,3 +117,6 @@ python src/eval/compression_ratio.py
 python pipeline.py photo.jpeg --detector-weights yolov8s-worldv2.pt --conf 0.15 --device cpu
 
 python eval\batch_eval.py frames --detector-weights yolov8s-worldv2.pt --conf 0.15 --device cpu --output-json results.json
+
+
+DATASET - https://drive.google.com/drive/folders/1GDm53IaI4Hqfdp5uamKJNJcVuZH3237G?usp=sharing
