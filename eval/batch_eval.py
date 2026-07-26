@@ -29,6 +29,7 @@ import os
 import statistics
 import sys
 import time
+import traceback
 from dataclasses import asdict, dataclass
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -105,8 +106,10 @@ def run_batch(
             )
             print(f"[ok]   {fname}: {comp.summary()}")
         except Exception as e:  # noqa: BLE001 - one bad frame must not kill the batch
-            failures.append({"filename": fname, "error": f"{type(e).__name__}: {e}"})
+            tb = traceback.format_exc()
+            failures.append({"filename": fname, "error": f"{type(e).__name__}: {e}", "traceback": tb})
             print(f"[FAIL] {fname}: {type(e).__name__}: {e}")
+            print(tb)
 
     return {
         "frames_attempted": len(frame_paths),

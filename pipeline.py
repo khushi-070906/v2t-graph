@@ -17,6 +17,7 @@ from detect_depth import DetectorDepthEstimator
 from graph_builder import build_graph, DEFAULT_CLASS_VOCAB
 from pruning import prune_graph, PruningConfig
 from encoders import encode_haptic_matrix, encode_spatial_audio
+from navigation_planner import generate_instructions, instructions_to_speech_text
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "eval"))
 from compression_ratio import compute_compression  # noqa: E402
@@ -71,6 +72,15 @@ def run_pipeline(
         # back to their correct original labels.
         results["audio_json"] = encode_spatial_audio(pruned, labels, w, h)
 
+    # Phase 6/7 — navigation instructions + speech text, derived from the
+    # same spatial-audio JSON (computed above if output includes "audio";
+    # computed fresh here otherwise, since instructions don't depend on
+    # which output modes the caller asked for).
+    audio_json = results.get("audio_json") or encode_spatial_audio(pruned, labels, w, h)
+    instructions = generate_instructions(audio_json, max_instructions=3)
+    results["instructions"] = [instr.text for instr in instructions]
+    results["speech_text"] = instructions_to_speech_text(instructions)
+
     results["raw_labels"] = labels
     results["pruned_labels"] = pruned_labels
     results["compression"] = compression
@@ -89,6 +99,12 @@ if __name__ == "__main__":
         help='e.g. "yolov8s-worldv2.pt" for open-vocabulary detection (see DetectorDepthEstimator docstring)',
     )
     parser.add_argument("--conf", type=float, default=0.35)
+    parser.add_argument(
+        "--speak", action="store_true",
+        help="Speak the navigation instructions aloud via pyttsx3 (offline TTS). "
+             "Off by default -- run_pipeline()/batch_eval.py callers should never "
+             "trigger audio playback implicitly.",
+    )
     args = parser.parse_args()
 
     out = run_pipeline(
@@ -108,3 +124,13 @@ if __name__ == "__main__":
         print("Haptic matrix shape:", out["matrix"].shape)
     if "audio_json" in out:
         print(out["audio_json"])
+
+    print()
+    print("Navigation instructions:")
+    for line in out["instructions"]:
+        print(" ", line)
+    print("Speech text:", out["speech_text"])
+
+    if args.speak:
+        from speech_output import speak_instructions  # lazy import — pyttsx3 optional
+        speak_instructions(out["speech_text"])

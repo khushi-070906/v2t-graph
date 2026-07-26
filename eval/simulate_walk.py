@@ -61,6 +61,7 @@ from __future__ import annotations
 import math
 import os
 import random
+import statistics
 import sys
 from dataclasses import dataclass
 
@@ -114,7 +115,7 @@ def random_room(
 
 
 def adversarial_room(
-    width: int, height: int, n_clutter: int, seed: int
+    width: int, height: int, n_clutter: int, seed: int, n_blockers: int = 1
 ) -> tuple[list[Obstacle], tuple[int, int], tuple[int, int], tuple[float, float]]:
     """
     Stress-tests the specific failure mode distance-only ranking has and
@@ -126,17 +127,23 @@ def adversarial_room(
     - Clutter objects (plant/chair/table) are placed CLOSE to the agent in
       Euclidean distance but well OFF to the side (large |dy| relative to
       dx) — i.e. near, but not in the direction the agent is walking.
-    - ONE real blocker ("obstacle", critical=True) is placed FURTHER away
-      in Euclidean distance but DIRECTLY ON the heading line (dy=0) — i.e.
-      far, but squarely in the walking path.
+    - n_blockers real blockers ("obstacle", critical=True) are placed
+      FURTHER away in Euclidean distance but DIRECTLY ON (or near) the
+      heading line — i.e. far, but squarely in the walking path.
 
     distance_only ranks by raw distance, so early in the walk (when the
     agent is still near the clutter) it burns its limited attention slots
     on the close-but-irrelevant clutter instead of the farther, genuinely
-    critical blocker. v2t_pruned's heading term should down-weight the
+    critical blocker(s). v2t_pruned's heading term should down-weight the
     off-path clutter (large angular deviation from heading) despite it
-    being closer, and correctly prioritize the on-path blocker despite it
-    being farther — this is exactly what attention_precision measures.
+    being closer, and correctly prioritize the on-path blocker(s) despite
+    them being farther — this is exactly what attention_precision measures.
+
+    n_blockers > 1 spreads multiple critical obstacles along the hallway
+    (evenly spaced in x, each jittered slightly in y) rather than testing
+    only the single-blocker scene every seed. This turns the adversarial
+    ablation into a distribution over scene difficulty instead of one
+    fixed layout, per README's flagged next step.
     """
     rng = random.Random(seed)
     mid_y = height // 2
@@ -153,9 +160,21 @@ def adversarial_room(
         cy = max(0, min(height - 1, mid_y + dy))
         obstacles.append(Obstacle(x=dx, y=cy, label=rng.choice(clutter_labels), critical=False))
 
-    # Real blocker: further ahead (large dx), but exactly on the heading line (dy=0)
-    blocker_x = min(width - 1, width // 2)
-    obstacles.append(Obstacle(x=blocker_x, y=mid_y, label="obstacle", critical=True))
+    # Real blocker(s): further ahead (large dx), spread along the hallway,
+    # each near-but-not-exactly on the heading line so distance_only can't
+    # trivially "solve" the scene by pure luck of the dy=0 alignment.
+    span_start = max(1, width // 3)
+    span_end = width - 1
+    if n_blockers == 1:
+        blocker_xs = [min(width - 1, width // 2)]
+    else:
+        step = (span_end - span_start) / (n_blockers - 1)
+        blocker_xs = [round(span_start + i * step) for i in range(n_blockers)]
+
+    for bx in blocker_xs:
+        jitter = rng.choice([-1, 0, 0, 1])  # mostly on-line, occasionally +-1 off
+        by = max(0, min(height - 1, mid_y + jitter))
+        obstacles.append(Obstacle(x=min(width - 1, bx), y=by, label="obstacle", critical=True))
 
     return obstacles, start, goal, heading
 
@@ -273,11 +292,14 @@ def simulate(
     seed: int,
     room_mode: str = "random",
     attention_slots: int = 2,
+    n_blockers: int = 1,
 ) -> SimResult:
     if room_mode == "random":
         obstacles, start, goal, heading = random_room(width, height, n_obstacles, seed)
     elif room_mode == "adversarial":
-        obstacles, start, goal, heading = adversarial_room(width, height, n_obstacles, seed)
+        obstacles, start, goal, heading = adversarial_room(
+            width, height, n_obstacles, seed, n_blockers=n_blockers
+        )
     else:
         raise ValueError(room_mode)
 
@@ -344,6 +366,7 @@ def run_comparison(
     n_obstacles: int = 15,
     room_mode: str = "random",
     attention_slots: int = 2,
+    n_blockers: int = 1,
 ):
     strategies = ["linear_baseline", "distance_only", "v2t_pruned"]
     results = {s: [] for s in strategies}
@@ -351,25 +374,40 @@ def run_comparison(
     for seed in range(n_trials):
         for s in strategies:
             results[s].append(
-                simulate(s, width, height, n_obstacles, seed, room_mode=room_mode, attention_slots=attention_slots)
+                simulate(
+                    s, width, height, n_obstacles, seed,
+                    room_mode=room_mode, attention_slots=attention_slots, n_blockers=n_blockers,
+                )
             )
 
-    print(f"-- room_mode={room_mode}, attention_slots={attention_slots} --")
-    print(f"{'strategy':16s} {'avg_collisions':>15s} {'avg_steps':>10s} {'attn_precision':>15s} {'goal_rate':>10s}")
+    label = f"room_mode={room_mode}, attention_slots={attention_slots}"
+    if room_mode == "adversarial":
+        label += f", n_blockers={n_blockers}"
+    print(f"-- {label} --")
+    print(f"{'strategy':16s} {'avg_collisions':>15s} {'avg_steps':>10s} {'attn_precision':>19s} {'goal_rate':>10s}")
     for s in strategies:
         rs = results[s]
+        precisions = [r.avg_attention_precision for r in rs]
         avg_collisions = sum(r.collisions for r in rs) / len(rs)
         avg_steps = sum(r.steps for r in rs) / len(rs)
-        avg_precision = sum(r.avg_attention_precision for r in rs) / len(rs)
+        avg_precision = sum(precisions) / len(precisions)
+        std_precision = statistics.stdev(precisions) if len(precisions) > 1 else 0.0
         goal_rate = sum(r.reached_goal for r in rs) / len(rs)
-        print(f"{s:16s} {avg_collisions:15.2f} {avg_steps:10.1f} {avg_precision:15.1%} {goal_rate:10.1%}")
+        precision_str = f"{avg_precision:.1%} +- {std_precision:.1%}"
+        print(f"{s:16s} {avg_collisions:15.2f} {avg_steps:10.1f} {precision_str:>19s} {goal_rate:10.1%}")
 
 
 if __name__ == "__main__":
     # General random-room stats (broad, less discriminative between strategies)
     run_comparison(room_mode="random", n_obstacles=15, attention_slots=3)
     print()
-    # The actual ablation: adversarial scenes built to separate
-    # distance-only ranking from heading-aware ranking. n_obstacles here
-    # controls clutter count, not total obstacles (see adversarial_room).
-    run_comparison(room_mode="adversarial", n_obstacles=4, attention_slots=2)
+    # The original single-blocker ablation, kept for direct comparison to
+    # the README's previously-cited numbers (26.3% vs 10.6%).
+    run_comparison(room_mode="adversarial", n_obstacles=4, attention_slots=2, n_blockers=1)
+    print()
+    # The actual "next step" ablation: multiple blockers spread along the
+    # hallway (with y-jitter, see adversarial_room docstring) instead of
+    # one fixed single-blocker scene per seed -- gives a real distribution
+    # of scene difficulty and error bars, not a single cherry-pickable number.
+    for nb in (2, 3, 4):
+        run_comparison(room_mode="adversarial", n_obstacles=4, attention_slots=2, n_blockers=nb)

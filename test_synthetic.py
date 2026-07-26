@@ -10,6 +10,7 @@ from detect_depth import Detection
 from graph_builder import build_graph
 from pruning import prune_graph, PruningConfig
 from encoders import encode_haptic_matrix, encode_spatial_audio
+from navigation_planner import generate_instructions, instructions_to_speech_text
 
 FRAME_W, FRAME_H = 640, 480
 
@@ -35,3 +36,9 @@ print("Haptic matrix non-zero cells:", (matrix > 0).sum())
 
 audio_json = encode_spatial_audio(pruned, labels, FRAME_W, FRAME_H)
 print(audio_json)
+
+instructions = generate_instructions(audio_json, max_instructions=3)
+print("Navigation instructions:")
+for instr in instructions:
+    print(" ", instr.text)
+print("Speech text:", instructions_to_speech_text(instructions))

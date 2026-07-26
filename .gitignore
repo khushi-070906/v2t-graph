@@ -40,6 +40,7 @@ stairs_obstacle_test/
 dataset/
 datasets/
 data/
+frames_sunrgbd/
 
 # =========================
 # Evaluation Outputs
