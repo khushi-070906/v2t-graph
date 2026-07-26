@@ -157,6 +157,7 @@ python generate_results_figure.py --results-json results.json --out results_figu
 
 ## Next implementation steps
 
+<<<<<<< HEAD
 - **Done:** real-photo batch eval on two datasets — NYU Depth V2 (51
   frames: 52.6% +- 29.8% node compression) and SUN RGB-D (21 frames: 74.0%
   +- 13.9%, see known issue #6 caveat). `batch_eval.py` now also captures
@@ -189,3 +190,27 @@ python generate_results_figure.py --results-json results.json --out results_figu
   ownership/inventorship (likely co-inventor with Dr. Amandeep Kaur)
   before drafting. India has no public-disclosure grace period, so this
   needs to happen before any paper submission or conference presentation.
+=======
+- Real YOLOv8-World + Depth Anything V2 weights are now confirmed working
+  end-to-end on a real photo, with correct pruning (issues 4 and 5 —
+  closed). Next: scale from single-photo spot checks to a real batch —
+  run `pipeline.py` over a folder of NYU Depth V2 / SUN RGB-D frames and
+  aggregate `compute_compression` output into the actual results-table
+  numbers, rather than one photo at a time.
+- Run `eval/simulate_walk.py` for the `attention_precision@K` comparison
+  number now that pruning correctness is verified on real weights, not
+  just synthetic detections.
+- Consider extending `simulate_walk.py`'s adversarial scenario to multiple
+  blockers / more clutter to get a distribution of attention_precision
+  values rather than one fixed scene per seed, if you want error bars for
+  the paper's results table
+
+
+
+python pipeline.py photo.jpeg --detector-weights yolov8s-worldv2.pt --conf 0.15 --device cpu
+
+python eval\batch_eval.py frames --detector-weights yolov8s-worldv2.pt --conf 0.15 --device cpu --output-json results.json
+
+
+DATASET - https://drive.google.com/drive/folders/1GDm53IaI4Hqfdp5uamKJNJcVuZH3237G?usp=sharing
+>>>>>>> 4760b106664a236b66a04ded6b4e3583312f72a4
