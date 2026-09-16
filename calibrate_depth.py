@@ -46,7 +46,7 @@ import json
 import cv2
 import numpy as np
 
-from detect_depth import DetectorDepthEstimator
+from detect_depth import DetectorDepthEstimator, apply_calibration
 
 
 def capture_point(detector: DetectorDepthEstimator, cap: cv2.VideoCapture, true_distance_m: float) -> float | None:
@@ -115,18 +115,15 @@ def fit_correction(points: list[tuple[float, float]]) -> dict:
 
 def apply_correction(raw_depth_m: float, calibration: dict) -> float:
     """
-    Applies a saved calibration (from calibration.json) to a raw depth
-    reading. detect_depth.py / pipeline.py can import and call this on
-    Detection.depth_m if a --calibration file is provided (not wired in
-    by default -- this script only measures and saves the correction;
-    applying it everywhere is a deliberate separate step so you can
-    inspect the numbers first).
+    Backwards-compatible alias for detect_depth.apply_calibration.
+
+    The correction now lives in detect_depth.py so the runtime path can
+    apply it without importing this interactive capture script, and so
+    there is exactly one implementation of the formula rather than two
+    copies that can drift. Wire it in with `--calibration calibration.json`
+    on detect_depth.py / pipeline.py / eval/batch_eval.py.
     """
-    scale = calibration["scale"]
-    offset = calibration["offset"]
-    if abs(scale) < 1e-6:
-        return raw_depth_m
-    return (raw_depth_m - offset) / scale
+    return apply_calibration(raw_depth_m, calibration)
 
 
 def main():
