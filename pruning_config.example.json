@@ -1,0 +1,24 @@
+{
+  "_comment": "Copy this file, tune the values, and pass its path via --pruning-config. Every key is optional -- omit a key to keep pruning.py's built-in default for it. affordance_priority only needs to list the classes you're actually changing; anything you omit falls back to the built-in AFFORDANCE_PRIORITY value for that class.",
+
+  "tau": 0.35,
+  "heading_gamma": 2.0,
+  "prune_threshold": 0.15,
+  "max_nodes": 12,
+
+  "affordance_priority": {
+    "door": 1.0,
+    "stairs": 1.0,
+    "obstacle": 0.9,
+    "person": 0.8,
+    "chair": 0.5,
+    "table": 0.5,
+    "sofa": 0.4,
+    "bed": 0.4,
+    "cabinet": 0.3,
+    "wall": 0.3,
+    "plant": 0.2,
+    "tv": 0.15,
+    "unknown": 0.3
+  }
+}

@@ -1,0 +1,10 @@
+# Everything in requirements.txt, plus tooling needed only for evaluation,
+# figures, dataset fetching and tests. Keeping these out of requirements.txt
+# means a deployment image (Jetson) does not have to carry matplotlib or the
+# HuggingFace datasets stack.
+-r requirements.txt
+
+pytest>=8.0                 # tests/
+matplotlib>=3.8             # figures/generate_results_figure.py
+requests>=2.31              # fetch_nyu_frames_api.py / fetch_sunrgbd_frames*.py
+datasets>=2.18              # fetch_sunrgbd_frames_hf.py
