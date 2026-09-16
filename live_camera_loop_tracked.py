@@ -38,7 +38,7 @@ from detect_depth import DetectorDepthEstimator
 from graph_builder import build_graph
 from pruning import prune_graph, PruningConfig
 from encoders import encode_spatial_audio
-from navigation_planner import generate_instructions, instructions_to_speech_text
+from navigation_planner import generate_instructions
 from tracker import ObjectTracker
 
 
@@ -134,7 +134,12 @@ def run_camera_loop(
 
             # Phases 2-4 — identical to pipeline.py, just fed only
             # confirmed detections instead of every raw detection
-            graph = build_graph(confirmed_detections, frame_size=(w, h))
+            # include_object_edges=False: the O(n^2) object<->object edges are
+            # never read by pruning.py or encoders.py, and building them on
+            # every camera frame is pure latency in the live path.
+            graph = build_graph(
+                confirmed_detections, frame_size=(w, h), include_object_edges=False
+            )
             pruned = prune_graph(
                 graph, detections_labels=labels, heading_rad=heading_rad, config=PruningConfig()
             )
