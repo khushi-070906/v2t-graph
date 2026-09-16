@@ -13,14 +13,37 @@ import os
 import sys
 import cv2
 
-from detect_depth import DetectorDepthEstimator
-from graph_builder import build_graph, DEFAULT_CLASS_VOCAB
+from detect_depth import DetectorDepthEstimator, load_calibration
+from graph_builder import build_graph
 from pruning import prune_graph, PruningConfig
 from encoders import encode_haptic_matrix, encode_spatial_audio
 from navigation_planner import generate_instructions, instructions_to_speech_text
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "eval"))
 from compression_ratio import compute_compression  # noqa: E402
+
+
+def build_detector(
+    device: str = "cuda",
+    detector_weights: str = "yolov10n.pt",
+    conf_threshold: float = 0.35,
+    calibration: dict | None = None,
+) -> DetectorDepthEstimator:
+    """
+    Constructs the Phase 1 detector once so it can be reused across frames.
+
+    Loading YOLO + Depth-Anything costs seconds and hundreds of MB. Batch
+    callers (eval/batch_eval.py) must build the detector ONCE and pass it to
+    run_pipeline(detector=...) — previously run_pipeline constructed its own
+    on every call, so a 51-frame NYU batch paid the full model-load cost 51
+    times over.
+    """
+    return DetectorDepthEstimator(
+        device=device,
+        detector_weights=detector_weights,
+        conf_threshold=conf_threshold,
+        calibration=calibration,
+    )
 
 
 def run_pipeline(
@@ -30,16 +53,33 @@ def run_pipeline(
     output: str = "both",
     detector_weights: str = "yolov10n.pt",
     conf_threshold: float = 0.35,
+    detector: DetectorDepthEstimator | None = None,
+    config: PruningConfig | None = None,
+    calibration: dict | None = None,
 ):
+    """
+    detector: an already-constructed DetectorDepthEstimator to reuse. When
+        None, one is built per call (fine for a single image, very wasteful
+        in a loop — see build_detector).
+    config: PruningConfig to use; defaults to PruningConfig(). Pass an
+        ablated config to re-run the same frames with a term disabled.
+    """
     frame = cv2.imread(image_path)
     if frame is None:
         raise FileNotFoundError(image_path)
     h, w = frame.shape[:2]
 
+    if config is None:
+        config = PruningConfig()
+
     # Phase 1
-    detector = DetectorDepthEstimator(
-        device=device, detector_weights=detector_weights, conf_threshold=conf_threshold
-    )
+    if detector is None:
+        detector = build_detector(
+            device=device,
+            detector_weights=detector_weights,
+            conf_threshold=conf_threshold,
+            calibration=calibration,
+        )
     detections = detector.run(frame)
     labels = [d.label for d in detections]
 
@@ -48,7 +88,7 @@ def run_pipeline(
     raw_edge_count = graph.edge_index.shape[1]
 
     # Phase 3 — the core contribution
-    pruned = prune_graph(graph, detections_labels=labels, heading_rad=heading_rad, config=PruningConfig())
+    pruned = prune_graph(graph, detections_labels=labels, heading_rad=heading_rad, config=config)
     pruned_labels = [labels[i] for i in pruned.kept_node_indices]
 
     # Real (not synthetic) numbers for eval/compression_ratio.py's table —
@@ -84,13 +124,19 @@ def run_pipeline(
     results["raw_labels"] = labels
     results["pruned_labels"] = pruned_labels
     results["compression"] = compression
+    results["ablation"] = config.ablation_name()
     return results
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("image_path")
-    parser.add_argument("--heading", type=float, default=0.0, help="user heading in radians, 0 = facing right in image plane")
+    parser.add_argument(
+        "--heading", type=float, default=0.0,
+        help="user heading in radians relative to the camera's optical axis; "
+             "0 = looking straight ahead (matches graph_builder's ego convention, "
+             "where an object at the horizontal center of the frame has bearing 0)",
+    )
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--output", choices=["matrix", "audio", "both"], default="both")
     parser.add_argument(
@@ -100,12 +146,36 @@ if __name__ == "__main__":
     )
     parser.add_argument("--conf", type=float, default=0.35)
     parser.add_argument(
+        "--calibration", default=None,
+        help="path to calibration.json from calibrate_depth.py; applies the fitted depth correction",
+    )
+    parser.add_argument("--tau", type=float, default=PruningConfig.tau,
+                        help="distance decay constant in pruning.edge_weight")
+    parser.add_argument("--gamma", type=float, default=PruningConfig.heading_gamma,
+                        help="heading cone sharpness exponent")
+    parser.add_argument("--prune-threshold", type=float, default=PruningConfig.prune_threshold)
+    parser.add_argument("--max-nodes", type=int, default=PruningConfig.max_nodes)
+    parser.add_argument(
+        "--ablate", nargs="*", default=[], choices=["affordance", "distance", "heading"],
+        help="disable one or more terms of the pruning formula, for term-wise ablation",
+    )
+    parser.add_argument(
         "--speak", action="store_true",
         help="Speak the navigation instructions aloud via pyttsx3 (offline TTS). "
              "Off by default -- run_pipeline()/batch_eval.py callers should never "
              "trigger audio playback implicitly.",
     )
     args = parser.parse_args()
+
+    config = PruningConfig(
+        tau=args.tau,
+        heading_gamma=args.gamma,
+        prune_threshold=args.prune_threshold,
+        max_nodes=args.max_nodes,
+        use_affordance="affordance" not in args.ablate,
+        use_distance="distance" not in args.ablate,
+        use_heading="heading" not in args.ablate,
+    )
 
     out = run_pipeline(
         args.image_path,
@@ -114,8 +184,11 @@ if __name__ == "__main__":
         output=args.output,
         detector_weights=args.detector_weights,
         conf_threshold=args.conf,
+        config=config,
+        calibration=load_calibration(args.calibration),
     )
 
+    print("Pruning terms:    ", out["ablation"])
     print("Raw detections:   ", out["raw_labels"])
     print("Kept after prune: ", out["pruned_labels"])
     print(out["compression"].summary())

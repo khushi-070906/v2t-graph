@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import math
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from detect_depth import Detection
 
@@ -101,7 +101,6 @@ class ObjectTracker:
         not-yet-confirmed detection won't appear here yet).
         """
         now = time.time()
-        diag = math.hypot(frame_w, frame_h)
         unmatched_track_ids = set(self._tracks.keys())
         detection_to_track: dict[int, Track] = {}
 

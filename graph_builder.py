@@ -50,6 +50,14 @@ DEFAULT_CLASS_VOCAB = [
 # of the image, and "straight ahead" is the horizontal center.
 EGO_NORM_POS = (0.5, 1.0)
 
+# Scene scale in meters, used to normalize metric depth onto the same ~[0,1]
+# range as normalized pixel offsets. Single source of truth: pruning.py's
+# `tau` is calibrated against THIS scale, so changing the depth model without
+# changing this constant silently rescales every distance term in the
+# pruning formula. 20m matches the Depth-Anything-V2-Metric-Indoor
+# checkpoint used in detect_depth.py.
+MAX_DEPTH_M = 20.0
+
 
 def class_to_index(label: str, vocab: list[str] = DEFAULT_CLASS_VOCAB) -> int:
     return vocab.index(label) if label in vocab else vocab.index("unknown")
@@ -64,7 +72,8 @@ def build_graph(
     detections: list[Detection],
     frame_size: tuple[int, int],
     class_vocab: list[str] = DEFAULT_CLASS_VOCAB,
-    max_depth: float = 20.0,
+    max_depth: float = MAX_DEPTH_M,
+    include_object_edges: bool = True,
 ) -> Data:
     """
     frame_size: (width, height) in pixels, used to normalize centroids to [0, 1]
@@ -105,13 +114,18 @@ def build_graph(
     src, dst, edge_attrs = [], [], []
 
     # --- object <-> object edges (structural only, not used for pruning) ---
-    for i in range(n):
-        for j in range(n):
-            if i == j:
-                continue
-            src.append(i + 1)
-            dst.append(j + 1)
-            edge_attrs.append(_relative_edge_attr(detections[i], detections[j], w, h, max_depth))
+    # O(n^2) in detections and consumed by nothing in the current pipeline.
+    # Set include_object_edges=False for real-time/live use; leave it on when
+    # you need the full baseline graph for the compression metric or for
+    # future message-passing experiments.
+    if include_object_edges:
+        for i in range(n):
+            for j in range(n):
+                if i == j:
+                    continue
+                src.append(i + 1)
+                dst.append(j + 1)
+                edge_attrs.append(_relative_edge_attr(detections[i], detections[j], w, h, max_depth))
 
     # --- ego -> object edges (what pruning.py actually scores) ---
     for j in range(n):
@@ -128,7 +142,7 @@ def build_graph(
 
 
 def _relative_edge_attr(
-    a: Detection, b: Detection, frame_w: int, frame_h: int, max_depth: float = 20.0
+    a: Detection, b: Detection, frame_w: int, frame_h: int, max_depth: float = MAX_DEPTH_M
 ) -> np.ndarray:
     """
     Returns [relative_distance, relative_angle_rad] from object a -> object b,
@@ -165,7 +179,7 @@ def _relative_edge_attr(
 
 
 def _ego_edge_attr(
-    obj: Detection, frame_w: int, frame_h: int, max_depth: float = 20.0
+    obj: Detection, frame_w: int, frame_h: int, max_depth: float = MAX_DEPTH_M
 ) -> np.ndarray:
     """
     Returns [distance, heading_bearing_rad] from the USER (ego) to a

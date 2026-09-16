@@ -163,7 +163,7 @@ def instructions_to_speech_text(instructions: list[NavigationInstruction]) -> st
 
 if __name__ == "__main__":
     # Quick manual check using the same synthetic detections as
-    # test_synthetic.py, so this can be sanity-checked without model weights.
+    # demo_synthetic.py, so this can be sanity-checked without model weights.
     from detect_depth import Detection
     from graph_builder import build_graph
     from pruning import prune_graph, PruningConfig

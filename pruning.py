@@ -44,9 +44,6 @@ from dataclasses import dataclass
 import torch
 from torch_geometric.data import Data
 
-from graph_builder import DEFAULT_CLASS_VOCAB
-
-
 # Per-class affordance priority. Tune per deployment / user study.
 # Higher = more important to surface regardless of position.
 AFFORDANCE_PRIORITY = {
@@ -65,13 +62,47 @@ AFFORDANCE_PRIORITY = {
     "unknown": 0.3,
 }
 
+# A class at or above this affordance priority is safety-critical and is
+# force-kept even when its ego-edge score falls below prune_threshold.
+# Single source of truth — previously this 0.9 literal was repeated in
+# _select_top_nodes and _assert_pruning_invariant, where the two copies
+# could silently drift apart.
+FORCED_KEEP_MIN_AFFORDANCE = 0.9
 
-@dataclass
+
+def is_forced_keep(label: str) -> bool:
+    """True for safety-critical classes (door / stairs / obstacle)."""
+    return AFFORDANCE_PRIORITY.get(label, 0.0) >= FORCED_KEEP_MIN_AFFORDANCE
+
+
+@dataclass(frozen=True)
 class PruningConfig:
     tau: float = 0.35          # distance decay constant (graph is in normalized coords)
     heading_gamma: float = 2.0  # how sharply off-heading objects get down-weighted
     prune_threshold: float = 0.15
     max_nodes: int | None = 12  # hard cap on nodes kept after pruning; None = no cap
+
+    # --- ablation switches -------------------------------------------------
+    # The paper claims w = affordance * distance * heading. These flags let
+    # eval scripts turn each term off INDEPENDENTLY and re-run the same real
+    # frames, which is the term-wise ablation a reviewer will ask for. A
+    # disabled term contributes a constant 1.0 instead of being removed, so
+    # prune_threshold stays comparable across ablations.
+    use_affordance: bool = True
+    use_distance: bool = True
+    use_heading: bool = True
+
+    def ablation_name(self) -> str:
+        on = [
+            name
+            for name, enabled in (
+                ("affordance", self.use_affordance),
+                ("distance", self.use_distance),
+                ("heading", self.use_heading),
+            )
+            if enabled
+        ]
+        return "+".join(on) if on else "none"
 
 
 def heading_alignment(angle_rad: float, heading_rad: float, gamma: float) -> float:
@@ -93,9 +124,17 @@ def edge_weight(
     heading_rad: float,
     config: PruningConfig,
 ) -> float:
-    affordance = AFFORDANCE_PRIORITY.get(dst_label, AFFORDANCE_PRIORITY["unknown"])
-    distance_term = math.exp(-distance / config.tau)
-    heading_term = heading_alignment(angle_rad, heading_rad, config.heading_gamma)
+    affordance = (
+        AFFORDANCE_PRIORITY.get(dst_label, AFFORDANCE_PRIORITY["unknown"])
+        if config.use_affordance
+        else 1.0
+    )
+    distance_term = math.exp(-distance / config.tau) if config.use_distance else 1.0
+    heading_term = (
+        heading_alignment(angle_rad, heading_rad, config.heading_gamma)
+        if config.use_heading
+        else 1.0
+    )
     return affordance * distance_term * heading_term
 
 
@@ -103,20 +142,40 @@ def prune_graph(
     graph: Data,
     detections_labels: list[str],
     heading_rad: float,
-    config: PruningConfig = PruningConfig(),
+    config: PruningConfig | None = None,
 ) -> Data:
     """
     Scores every ego -> object edge with edge_weight() above, drops nodes
     whose score falls below `prune_threshold` (unless the node's class is
     high-affordance, e.g. door/stairs, in which case it's force-kept
     regardless of score), then caps the survivors at `max_nodes`.
+
+    `config` defaults to PruningConfig() — constructed per call rather than
+    bound once at import time as a shared default argument.
     """
+    if config is None:
+        config = PruningConfig()
+
     edge_index = graph.edge_index
     edge_attr = graph.edge_attr
     ego_idx = getattr(graph, "ego_node_idx", None)
 
+    n_edges = edge_index.shape[1]
+    if ego_idx is not None and n_edges > 0:
+        is_ego_edge = edge_index[0] == ego_idx
+    else:
+        is_ego_edge = torch.ones(n_edges, dtype=torch.bool)
+
+    # Only ego -> object edges are scored. Object <-> object edges exist in
+    # the graph for possible future message-passing use (see
+    # graph_builder.py) but are masked out below anyway, so scoring them was
+    # O(n^2) wasted work — on an 11-object scene that is 110 discarded
+    # edge_weight() calls per frame, and it grows quadratically with clutter.
     weights = []
-    for e in range(edge_index.shape[1]):
+    for e in range(n_edges):
+        if not bool(is_ego_edge[e]):
+            weights.append(0.0)
+            continue
         dst = edge_index[1, e].item()
         distance, angle = edge_attr[e].tolist()
         # dst is always an object node (>=1) when an ego node is present,
@@ -124,16 +183,11 @@ def prune_graph(
         # destination — map back to the 0-based detections_labels index.
         label_idx = dst - 1 if ego_idx is not None else dst
         label = detections_labels[label_idx]
-        w = edge_weight(distance, angle, label, heading_rad, config)
-        weights.append(w)
+        weights.append(edge_weight(distance, angle, label, heading_rad, config))
 
     weights_t = torch.tensor(weights, dtype=torch.float32) if weights else torch.zeros((0,))
 
-    if ego_idx is not None and edge_index.numel() > 0:
-        is_ego_edge = edge_index[0] == ego_idx
-        keep_mask = (weights_t >= config.prune_threshold) & is_ego_edge
-    else:
-        keep_mask = weights_t >= config.prune_threshold
+    keep_mask = (weights_t >= config.prune_threshold) & is_ego_edge
 
     pruned_edge_index = edge_index[:, keep_mask]
     pruned_weights = weights_t[keep_mask]
@@ -180,9 +234,8 @@ def _assert_pruning_invariant(
     offset = 1 if ego_idx is not None else 0
     for i in keep_nodes:
         label = labels[i - offset]
-        is_forced = AFFORDANCE_PRIORITY.get(label, 0) >= 0.9
         score = node_importance[i].item()
-        if not is_forced and score < config.prune_threshold:
+        if not is_forced_keep(label) and score < config.prune_threshold:
             raise AssertionError(
                 f"pruning invariant violated: node {i} (label={label!r}) kept with "
                 f"importance={score:.4f} < prune_threshold={config.prune_threshold} "
@@ -212,12 +265,20 @@ def _select_top_nodes(
     # edge fell below threshold, since these are safety-critical regardless
     # of measured importance.
     offset = 1 if ego_idx is not None else 0
-    forced_keep = {
-        i + offset for i, lbl in enumerate(labels) if AFFORDANCE_PRIORITY.get(lbl, 0) >= 0.9
-    }
+    forced_keep = [i + offset for i, lbl in enumerate(labels) if is_forced_keep(lbl)]
 
     candidate_nodes = range(offset, offset + len(labels))
     ranked = sorted(candidate_nodes, key=lambda i: importance[i].item(), reverse=True)
+
+    # Forced-keep nodes are admitted first, but they are NOT exempt from
+    # max_nodes: a corridor scene with more doors/stairs than attention slots
+    # previously blew straight past the cap and handed the user a graph
+    # larger than the one they asked for. Rank them among themselves by
+    # importance so the cap keeps the most relevant safety-critical nodes.
+    forced_keep.sort(key=lambda i: importance[i].item(), reverse=True)
+    if max_nodes is not None:
+        forced_keep = forced_keep[:max_nodes]
+
     keep = set(forced_keep)
     for i in ranked:
         if i in keep:

@@ -55,13 +55,18 @@ def encode_haptic_matrix(pruned_graph: Data, grid_size: int = 64) -> np.ndarray:
 def encode_spatial_audio(
     pruned_graph: Data,
     detections_labels: list[str],
-    frame_w: int,
-    frame_h: int,
+    frame_w: int | None = None,
+    frame_h: int | None = None,
 ) -> str:
     """
     Emits a JSON schema of {label, distance, azimuth, priority} objects,
     suitable for driving a spatial audio synthesizer (e.g. HRTF panning
     by azimuth, volume/pitch by distance and priority).
+
+    frame_w / frame_h are accepted for call-site compatibility but unused:
+    node positions arrive already normalized to [0, 1] from graph_builder,
+    so no pixel dimensions are needed here. They are kept optional rather
+    than removed so existing callers keep working.
 
     detections_labels must be the FULL, ORIGINAL label list (same one
     passed into build_graph / prune_graph) — not pre-filtered. This
@@ -84,7 +89,8 @@ def encode_spatial_audio(
 
     for i in range(n):
         nx_ = pruned_graph.x[i, -2].item()
-        ny_ = pruned_graph.x[i, -1].item()
+        # vertical position is deliberately unused here: which way the user
+        # must turn depends on horizontal bearing, not on height in frame.
         depth = pruned_graph.x[i, -3].item()
 
         # azimuth: map normalized x in [0,1] to [-90, 90] degrees (left..right)
