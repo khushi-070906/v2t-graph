@@ -33,7 +33,9 @@ import traceback
 from dataclasses import asdict, dataclass
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from pipeline import run_pipeline  # noqa: E402
+from pipeline import build_detector, run_pipeline  # noqa: E402
+from pruning import PruningConfig  # noqa: E402
+from detect_depth import load_calibration  # noqa: E402
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 
@@ -68,13 +70,29 @@ def run_batch(
     device: str = "cuda",
     detector_weights: str = "yolov10n.pt",
     conf_threshold: float = 0.35,
+    config: PruningConfig | None = None,
+    calibration: dict | None = None,
 ) -> dict:
     frame_paths = find_frames(frames_dir)
     if not frame_paths:
         raise FileNotFoundError(f"no image files ({sorted(IMAGE_EXTS)}) found in {frames_dir}")
 
+    if config is None:
+        config = PruningConfig()
+
     results: list[FrameResult] = []
     failures: list[dict] = []
+
+    # Load YOLO + Depth-Anything ONCE for the whole batch. Constructing the
+    # detector inside the per-frame loop (which is what happened when
+    # run_pipeline built its own) re-read both checkpoints from disk on every
+    # single frame, so model loading — not inference — dominated batch runtime.
+    detector = build_detector(
+        device=device,
+        detector_weights=detector_weights,
+        conf_threshold=conf_threshold,
+        calibration=calibration,
+    )
 
     for path in frame_paths:
         fname = os.path.basename(path)
@@ -86,6 +104,8 @@ def run_batch(
                 output="matrix",  # audio JSON not needed for aggregate stats; skip for speed
                 detector_weights=detector_weights,
                 conf_threshold=conf_threshold,
+                detector=detector,
+                config=config,
             )
             comp = out["compression"]
             results.append(
@@ -112,6 +132,17 @@ def run_batch(
             print(tb)
 
     return {
+        "config": {
+            "heading_rad": heading_rad,
+            "detector_weights": detector_weights,
+            "conf_threshold": conf_threshold,
+            "calibrated": calibration is not None,
+            "ablation": config.ablation_name(),
+            "tau": config.tau,
+            "heading_gamma": config.heading_gamma,
+            "prune_threshold": config.prune_threshold,
+            "max_nodes": config.max_nodes,
+        },
         "frames_attempted": len(frame_paths),
         "frames_succeeded": len(results),
         "frames_failed": len(failures),
@@ -158,8 +189,29 @@ if __name__ == "__main__":
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--detector-weights", default="yolov10n.pt")
     parser.add_argument("--conf", type=float, default=0.35)
+    parser.add_argument("--calibration", default=None,
+                        help="path to calibration.json from calibrate_depth.py")
+    parser.add_argument("--tau", type=float, default=PruningConfig.tau)
+    parser.add_argument("--gamma", type=float, default=PruningConfig.heading_gamma)
+    parser.add_argument("--prune-threshold", type=float, default=PruningConfig.prune_threshold)
+    parser.add_argument("--max-nodes", type=int, default=PruningConfig.max_nodes)
+    parser.add_argument(
+        "--ablate", nargs="*", default=[], choices=["affordance", "distance", "heading"],
+        help="disable one or more terms of the pruning formula; run once per term "
+             "to produce the term-wise ablation table",
+    )
     parser.add_argument("--output-json", default=None, help="path to write full results JSON")
     args = parser.parse_args()
+
+    config = PruningConfig(
+        tau=args.tau,
+        heading_gamma=args.gamma,
+        prune_threshold=args.prune_threshold,
+        max_nodes=args.max_nodes,
+        use_affordance="affordance" not in args.ablate,
+        use_distance="distance" not in args.ablate,
+        use_heading="heading" not in args.ablate,
+    )
 
     t0 = time.time()
     batch = run_batch(
@@ -168,6 +220,8 @@ if __name__ == "__main__":
         device=args.device,
         detector_weights=args.detector_weights,
         conf_threshold=args.conf,
+        config=config,
+        calibration=load_calibration(args.calibration),
     )
     elapsed = time.time() - t0
 
@@ -180,10 +234,15 @@ if __name__ == "__main__":
 
     agg = batch["aggregate"]
     if agg:
-        nc, ec = agg["node_compression"], agg["edge_compression"]
+        nc = agg["node_compression"]
         print()
+        print(f"Pruning terms:        {batch['config']['ablation']}")
         print(f"Node compression:     {nc['mean']:.1%} +- {nc['std']:.1%}  (n={agg['n_frames']})")
-        print(f"Edge compression:     {ec['mean']:.1%} +- {ec['std']:.1%}  (n={agg['n_frames']})")
+        # Edge compression is deliberately NOT printed as a headline result.
+        # prune_graph() returns a graph with zero edges by construction, so
+        # edge compression is 100% on every frame that had any edge at all —
+        # it measures the output format, not the method. It stays in the JSON
+        # for completeness; do not put it in the paper's results table.
         if agg["critical_retention"]:
             cr = agg["critical_retention"]
             print(f"Critical retention:   {cr['mean']:.1%} +- {cr['std']:.1%}  (n={agg['n_frames_with_critical_objects']} frames w/ critical objects)")
